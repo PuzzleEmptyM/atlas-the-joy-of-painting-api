@@ -1,8 +1,8 @@
--- Create EpisodeColors Table
-CREATE TABLE EpisodeColors (
+-- Create Episodes_Colors Table
+CREATE TABLE Episodes_Colors (
     episode_id INT,
-    color_id INT,
-    PRIMARY KEY (episode_id, color_id),
-    FOREIGN KEY (episode_id) REFERENCES Episodes (episode_id),
-    FOREIGN KEY (color_id) REFERENCES Colors (color_id)
+    colors_id INT,
+    PRIMARY KEY (episode_id, colors_id),
+    FOREIGN KEY (episode_id) REFERENCES Episodes (id) ON DELETE CASCADE,
+    FOREIGN KEY (colors_id) REFERENCES Colors (id) ON DELETE CASCADE
 );
