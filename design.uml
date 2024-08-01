@@ -1,0 +1,12 @@
++----------------+        +----------------+        +------------------+        +----------------+        +------------------+
+|   Episodes     |        |     Colors     |        |   EpisodeColors  |        |    Subjects    |        |  EpisodeSubjects |
++----------------+        +----------------+        +------------------+        +----------------+        +------------------+
+| episode_id PK  |<------>| color_id PK    |        | episode_id FK PK |<------>| subject_id PK  |        | episode_id FK PK |
+| title          |        | color_name     |<------>| color_id FK PK   |        | subject_name   |<------>| subject_id FK PK |
+| season         |        | color_hex      |        +------------------+        +----------------+        +------------------+
+| episode_number |        +----------------+
+| broadcast_date |
+| img_src        |
+| youtube_src    |
+| num_colors     |
++----------------+
