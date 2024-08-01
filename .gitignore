@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+env/
+ENV/
+.env
+
+*.log
+
+# Database files
+*.sqlite3
+
+.ipynb_checkpoints/
+
+# CSV and other data files
+*.csv
+*.json
+*.xml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor specific files
+.vscode/
+.idea/
