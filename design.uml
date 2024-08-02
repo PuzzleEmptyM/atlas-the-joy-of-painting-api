@@ -8,4 +8,6 @@
 | broadcast_date |
 | youtube_src    |
 | image_url      |
+| num_colors     |
+| has_feature    |
 +----------------+

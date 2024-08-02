@@ -1,10 +1,24 @@
 import pandas as pd
+import logging
 
-def extract_titles(file_path='data/titles.csv'):
-    return pd.read_csv(file_path)
+def extract_data(titles_csv_path, colors_csv_path, youtube_csv_path):
+    try:
+        # Extract titles data
+        logging.info(f'Reading titles data from {titles_csv_path}')
+        titles_df = pd.read_csv(titles_csv_path)
+        logging.debug(f'Titles DataFrame columns: {titles_df.columns.tolist()}')
 
-def extract_colors(file_path='data/colors.csv'):
-    return pd.read_csv(file_path)
+        # Extract colors data
+        logging.info(f'Reading colors data from {colors_csv_path}')
+        colors_df = pd.read_csv(colors_csv_path)
+        logging.debug(f'Colors DataFrame columns: {colors_df.columns.tolist()}')
 
-def extract_youtube(file_path='data/youtube.csv'):
-    return pd.read_csv(file_path)
+        # Extract youtube data
+        logging.info(f'Reading youtube data from {youtube_csv_path}')
+        youtube_df = pd.read_csv(youtube_csv_path)
+        logging.debug(f'YouTube DataFrame columns: {youtube_df.columns.tolist()}')
+
+        return titles_df, colors_df, youtube_df
+    except Exception as e:
+        logging.error(f'Error occurred while extracting data: {e}')
+        raise

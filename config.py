@@ -1,1 +1,1 @@
-DATABASE_URI = 'mysql+pymysql://root:Pu22l3s@localhost:3306/joy_of_coding'
+DATABASE_CONNECTION_STRING = "mysql+pymysql://root:Pu22l3s@localhost/joy_of_coding"

@@ -1,70 +1,75 @@
 import pandas as pd
 
-def transform_episodes(titles_df, youtube_df):
-    # Merge DataFrames on the painting title
-    episodes_df = youtube_df[['painting_title', 'season', 'episode', 'youtube_src', 'img_src']].merge(
-        titles_df[['title', 'month', 'day', 'year']], 
-        left_on='painting_title', 
-        right_on='title', 
-        how='left'
+def transform_data(titles_path, colors_path, youtube_path):
+    # Read the data
+    titles_df = pd.read_csv(titles_path)
+    colors_df = pd.read_csv(colors_path)
+    youtube_df = pd.read_csv(youtube_path)
+
+    # Rename columns for consistency
+    youtube_df = youtube_df.rename(columns={
+        'season': 'season',
+        'episode': 'episode_number'
+    })
+
+    # Merge the titles and youtube dataframes on title
+    episodes_df = pd.merge(titles_df, youtube_df, left_on='title', right_on='painting_title')
+
+    # Extract only the necessary columns
+    episodes_df = episodes_df[[
+        'title', 'month', 'day', 'year', 'img_src', 'youtube_src', 'season', 'episode_number', 'num_colors'
+    ]]
+
+    # Rename columns for consistency
+    episodes_df = episodes_df.rename(columns={
+        'title': 'episode_title',
+        'month': 'broadcast_month',
+        'day': 'broadcast_day',
+        'year': 'broadcast_year'
+    })
+
+    # Convert broadcast date columns to a single broadcast_date column
+    episodes_df['broadcast_date'] = pd.to_datetime(
+        episodes_df[['broadcast_year', 'broadcast_month', 'broadcast_day']].astype(str).agg('-'.join, axis=1),
+        errors='coerce'
     )
-    
-    # Convert month to string and map to numerical values
-    episodes_df['month'] = episodes_df['month'].str.strip().str.capitalize()
-    month_map = {
-        'January': '01', 'February': '02', 'March': '03', 'April': '04',
-        'May': '05', 'June': '06', 'July': '07', 'August': '08',
-        'September': '09', 'October': '10', 'November': '11', 'December': '12'
-    }
-    episodes_df['month'] = episodes_df['month'].map(month_map)
-    
-    # Handle missing values
-    episodes_df['day'] = episodes_df['day'].fillna(1).astype(int).astype(str).str.zfill(2)
-    episodes_df['year'] = episodes_df['year'].fillna(1900).astype(int).astype(str)
-    episodes_df['month'] = episodes_df['month'].fillna('01')
-    
-    # Combine year, month, and day into a single date column
-    episodes_df['broadcast_date'] = pd.to_datetime(episodes_df[['year', 'month', 'day']].agg('-'.join, axis=1), format='%Y-%m-%d', errors='coerce')
 
-    # Rename columns to match the database schema
-    episodes_df.rename(columns={
-        'painting_title': 'title',
-        'episode': 'episode_number',
-        'img_src': 'image_url',
-        'youtube_src': 'youtube_src',
-        'season': 'season'
-    }, inplace=True)
-    
-    # Select the required columns
-    episodes_df = episodes_df[['title', 'season', 'episode_number', 'broadcast_date', 'youtube_src', 'image_url']]
-    
-    print("Episodes DataFrame:")
-    print(episodes_df.head())
-    
-    return episodes_df
+    # Drop the original broadcast date columns
+    episodes_df = episodes_df.drop(columns=['broadcast_year', 'broadcast_month', 'broadcast_day'])
 
-def transform_colors(youtube_df):
-    colors_df = youtube_df[['colors', 'color_hex']].drop_duplicates()
-    colors_df = colors_df.set_index('color_hex')['colors'].str.split(',', expand=True).stack().reset_index(level=1, drop=True).reset_index()
-    colors_df.rename(columns={'colors': 'color_name'}, inplace=True)
-    colors_df.reset_index(drop=True, inplace=True)
-    colors_df.index += 1
-    colors_df.reset_index(inplace=True)
-    colors_df.rename(columns={'index': 'id'}, inplace=True)
-    
-    print("Colors DataFrame:")
-    print(colors_df.head())
-    
-    return colors_df
+    # Transform the colors data
+    unique_colors = pd.melt(colors_df, id_vars=['EPISODE', 'TITLE'], var_name='color_name', value_name='present')
+    unique_colors = unique_colors[unique_colors['present'] == 1].drop(columns=['present'])
 
-def transform_subjects(colors_df):
-    subjects_df = colors_df.melt(var_name='subject_name', value_name='exists').drop('exists', axis=1).drop_duplicates()
-    subjects_df.reset_index(drop=True, inplace=True)
-    subjects_df.index += 1
-    subjects_df.reset_index(inplace=True)
-    subjects_df.rename(columns={'index': 'id'}, inplace=True)
-    
-    print("Subjects DataFrame:")
-    print(subjects_df.head())
-    
-    return subjects_df
+    # Merge with episodes_df to get episode_id
+    unique_colors = pd.merge(unique_colors, youtube_df[['num', 'painting_title']], left_on='TITLE', right_on='painting_title')
+    unique_colors = unique_colors.rename(columns={'num': 'episode_id'})
+
+    # Map color names to IDs
+    color_names = pd.DataFrame(unique_colors['color_name'].unique(), columns=['color_name'])
+    color_names['color_id'] = color_names.index + 1
+
+    mapped_unique_colors = pd.merge(unique_colors, color_names, on='color_name')
+
+    # Create episode_colors DataFrame
+    episode_colors = mapped_unique_colors[['episode_id', 'color_id']]
+
+    # Transform the subjects data
+    subjects = colors_df.columns[2:]
+    unique_subjects = pd.melt(colors_df, id_vars=['EPISODE', 'TITLE'], var_name='subject_name', value_name='present')
+    unique_subjects = unique_subjects[unique_subjects['present'] == 1].drop(columns=['present'])
+
+    # Merge with episodes_df to get episode_id
+    unique_subjects = pd.merge(unique_subjects, youtube_df[['num', 'painting_title']], left_on='TITLE', right_on='painting_title')
+    unique_subjects = unique_subjects.rename(columns={'num': 'episode_id'})
+
+    # Map subject names to IDs
+    subject_names = pd.DataFrame(unique_subjects['subject_name'].unique(), columns=['subject_name'])
+    subject_names['subject_id'] = subject_names.index + 1
+
+    mapped_unique_subjects = pd.merge(unique_subjects, subject_names, on='subject_name')
+
+    # Create episode_subjects DataFrame
+    episode_subjects = mapped_unique_subjects[['episode_id', 'subject_id']]
+
+    return episodes_df, color_names, episode_colors, subject_names, episode_subjects
